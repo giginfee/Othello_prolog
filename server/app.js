@@ -12,8 +12,9 @@ swipl.call('consult(game_reversi)');
 
 app.post("/do-move", (req, res)=>{
     let {player, i,j, matrix}=req.body
-    let qText=`get_all_moves_indexes([${i},${j}],${JSON.stringify(matrix)},${player}, List), change_matrix(${JSON.stringify(matrix)},[[${i},${j}]|List], ${player}, Res )
-,matrix_to_json(Res,Json)`
+    let qText=`get_all_moves_indexes([${i},${j}],${JSON.stringify(matrix)},${player}, List), 
+    change_matrix(${JSON.stringify(matrix)},[[${i},${j}]|List], ${player}, Res ),
+    matrix_to_json(Res,Json)`
     let ret = swipl.call(qText);
     if (ret) {
         ret=JSON.parse(ret.Json);

@@ -58,7 +58,8 @@ export default {
     height: 90%;
     border: 0;
     border-radius: 100px;
-    background-color: #ab9875;
+    background-color: #46433e
+
 }
 .cell{
     display: flex;
@@ -77,7 +78,8 @@ export default {
     background-color: #dcd4cc;
 }
 .player2{
-    background-color: #46433e
+    background-color: #ab9875;
+
 }
 .non-active{
     background-color: #222222;

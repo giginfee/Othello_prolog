@@ -3,16 +3,23 @@
 
 
 
-
-do_minimax_move(Matrix, Item,ResMatrix):-
+% повертає матрицю, яка буде після ходу з прорахуванням двох ходів наперед
+%
+% do_minimax_move(++Matrix, ++Item,--ResMatrix)
+do_minimax_move(Matrix, Item, ResMatrix):-
     get_move_minimax(Matrix, Item, [X,Y]),
     get_all_moves_indexes([X,Y], Matrix,Item,List),
 	change_matrix(Matrix,[[X,Y]|List],Item, ResMatrix).
 
+
+% Знаходжння ходу, який буде найкращим з прорахуванням двох ходів наперед
+%
+% get_move_minimax(++Matrix, ++Item, --[X,Y])
 get_move_minimax(Matrix, Item, [X,Y]):-
      get_all_possible_move_indexes_for_item_list([H|Rest], Matrix,Item),
     get_move_minimax(Matrix, Item, H, [H|Rest], 0,[X,Y]).
 
+% знаходження такого ходу для гравця з перебором усіх можливих ходів і обранням найкращого
 get_move_minimax(_, _, [X,Y], [], _,[X,Y]).
 
 get_move_minimax(Matrix, Item, _, [[X,Y]|Rest], BestScore,Res):-
@@ -80,19 +87,24 @@ get_move_minimax(Matrix, Item, [BestX,BestY], [[X,Y]|Rest], BestScore,Res):-
 	!.
 
 
-
+% повертає матрицю, яка буде після оптимального ходу
+%
+% do_optimal_move(++Matrix, ++Item,--ResMatrix)
 do_optimal_move(Matrix, Item,ResMatrix):-
     get_optimal_move(Matrix, Item, [X,Y]),
     get_all_moves_indexes([X,Y], Matrix,Item,List),
 	change_matrix(Matrix,[[X,Y]|List],Item, ResMatrix).
 
-
+% знаходження оптимального ходу для гравця
+%
+% get_optimal_move(++Matrix, ++Item, --[X,Y])
 
 get_optimal_move(Matrix, Item, [X,Y]):-
     get_all_possible_move_indexes_for_item_list([H|Rest], Matrix,Item),
     get_optimal_move(Matrix, Item, H, [H|Rest], 0,[X,Y]),!
     .
 
+% знаходження оптимального ходу для гравця з перебором усіх можливих ходів і обранням найкращого
 get_optimal_move(_, _, [X,Y], [], _,[X,Y]).
 
 get_optimal_move(Matrix, Item, _, [[X,Y]|Rest], BestScore,Res):-
@@ -110,12 +122,16 @@ get_optimal_move(Matrix, Item, [BestX,BestY], [[X,Y]|Rest], BestScore,Res):-
     get_optimal_move(Matrix, Item, [BestX,BestY], Rest, BestScore,Res),
 	!.
 
-
+% отримання загальної оцінки матриці
+%
+% get_general_score_for_matrix( ++Matrix, ++Item, -ScoreSum)
 get_general_score_for_matrix( [Row1|Rest], Item, ScoreSum):-
     findall(Score, get_score_for_matrix([Row1|Rest], Item, Score),ScoreList),
     sumlist(ScoreList, ScoreSum).
 
-
+% обрахунок балів для усіх клітинок матриці, які мають задане значення
+%
+% get_score_for_matrix( ++Matrix, ++Item, -ScoreSum)
 get_score_for_matrix( [Row1|Rest], Item, Score):-
     Matrix = [Row1|Rest],
     length(Matrix,Len_X),
@@ -126,7 +142,9 @@ get_score_for_matrix( [Row1|Rest], Item, Score):-
     get_score([X,Y], Matrix, Score)
     .
 
-
+% обрахунок балів для задної клітинки
+%
+% get_score(++[X,Y], ++Matrix, --Score)
 get_score([X,Y], Matrix, Score):-
     closed_from_left([X,Y], Matrix, LeftScore),
     closed_from_right([X,Y], Matrix, RightScore),
@@ -179,24 +197,38 @@ matrix_to_json(Matrix, Json) :-
     with_output_to(string(Json), write_term(Matrix, [json(true)])),
     format('~s', [Json]).
 
+% знаходить список координат усіх клітинок, в які можна зробити хід для гравця (поле Item)
+%
+% get_all_possible_move_indexes_for_item_list(-List, ++Matrix, ++Item)
+
+get_all_possible_move_indexes_for_item_list(List, [Row1|Rest],Item):-
+    findall(X,get_all_possible_move_indexes_for_item(X, [Row1|Rest],Item),List),!.
+
+% знаходить усі координати таких клітинок, в які можна зробити хід для гравця
+%
+% get_all_possible_move_indexes_for_item(-[X,Y], ++Matrix, ++Item)
+
 get_all_possible_move_indexes_for_item([X,Y], [Row1|Rest],Item):-
-     Matrix = [Row1|Rest],
+    Matrix = [Row1|Rest],
     length(Matrix,Len_X),
     length(Row1,Len_Y),
     num_to_max(X,Len_X),
     num_to_max(Y,Len_Y),
-    get_element_from_matrix([X,Y], Matrix, 0),
-    get_all_moves_indexes([X,Y], [Row1|Rest], Item, [_|_]).
+    get_element_from_matrix([X,Y], Matrix, 0), % предикат, який повертає значення елемента матриці за координатами
+    get_all_moves_indexes([X,Y], [Row1|Rest], Item, [_|_]). % предикат дорівнює true, якщо після ходу на данну клітинку
+															% хоч одна фішка зміниться на фішку поточного гравця
 
-get_all_possible_move_indexes_for_item_list(List, [Row1|Rest],Item):-
-    findall(X,get_all_possible_move_indexes_for_item(X, [Row1|Rest],Item),List),!.
+
+% знаходить індекси всіх клітинок, фішки на яких зміняться на фішки поточного гравця при ході на клітинку з координатами X,Y
+%
+% get_all_moves_indexes(+[X,Y],  ++Matrix, ++Item, -All_Moves)
 
 get_all_moves_indexes([X,Y], [Row1|Rest], Item, All_Moves):-
     Matrix = [Row1|Rest],
     length(Matrix,Len_X),
     length(Row1,Len_Y),
     num_to_max(X,Len_X),
-    num_to_max(Y,Len_Y), 
+    num_to_max(Y,Len_Y),
     below([X,Y], Matrix, Below),
     below_left([X,Y], Matrix, Below_Left),
     below_right([X,Y], Matrix, Below_Right),
@@ -213,10 +245,10 @@ get_all_moves_indexes([X,Y], [Row1|Rest], Item, All_Moves):-
     get_valid_move(Above_Right,Item, Matrix, Above_Right_Moves),
     get_valid_move(Right,Item, Matrix, Right_Moves),
     get_valid_move(Left,Item, Matrix, Left_Moves),
-    append(Below_Moves,Below_Left_Moves,A),  
-    append(A,Below_Right_Moves,B),  
-    append(B,Above_Moves,C),  
-    append(C,Above_Left_Moves,D),  
+    append(Below_Moves,Below_Left_Moves,A),
+    append(A,Below_Right_Moves,B),
+    append(B,Above_Moves,C),
+    append(C,Above_Left_Moves,D),
     append(D,Above_Right_Moves,E),
     append(E,Right_Moves,F),
     append(F,Left_Moves,All_Moves),
@@ -225,7 +257,9 @@ get_all_moves_indexes([X,Y], [Row1|Rest], Item, All_Moves):-
 
 
 
-
+% Змінює усі елемент в матриці з заданими координатами на нове значення
+% List - список координат
+% change_matrix(++Matrix, ++List, ++NewValue, -NewMatrix)
 
 change_matrix(Matrix,[], _, Matrix).
 change_matrix(Matrix,[H|T], NewElem, ResultMatrix):-
@@ -233,11 +267,18 @@ change_matrix(Matrix,[H|T], NewElem, ResultMatrix):-
 	change_matrix(NewMatrix,T, NewElem, ResultMatrix),!.
 
 
+% Змінює елемент в матриці з заданими координатами на нове значення
+%
+% replace_element(++Matrix, ++[X,Y], ++NewValue, -NewMatrix)
 
 replace_element(Matrix, [X,Y], NewValue, NewMatrix) :-
-    nth0(X, Matrix, Row),       
+    nth0(X, Matrix, Row),
     replace_in_list(Row, Y, NewValue, NewRow),
     replace_in_list(Matrix, X, NewRow, NewMatrix).
+
+% Змінює елемент за заданим індексом на нове значення
+%
+% replace_in_list(++List, ++Index, ++NewValue, -ResList)
 
 replace_in_list([_|T], 0, NewValue, [NewValue|T]):-!.
 replace_in_list([H|T], Index, NewValue, [H|R]) :-
@@ -246,7 +287,9 @@ replace_in_list([H|T], Index, NewValue, [H|R]) :-
     replace_in_list(T, NextIndex, NewValue, R).
 
 
-
+% Змінює заданий список координат клітинок в будь-який бік від клітинки, в яку зробили хід, таким чином, що він стає списком координат тих клітинок, які зміняться при ході
+%
+% get_valid_move(++Move_List,++Init_item, ++Matrix, --Final_Moves)
 get_valid_move([],_, _, []):-!.
 get_valid_move(Move_List,Init_item, Matrix, Final_Moves):-
     get_valid_move_help(Move_List, Init_item, Matrix, [], Final_Moves).
@@ -271,12 +314,16 @@ get_valid_move_help([[X,Y]|Rest_Moves], Init_Item, Matrix, Current_Moves, Final_
 
 
 % за координатами отримуємо елемент матриці
+%
+% get_element_from_matrix(++[X,Y], ++Matrix, -Item)
 get_element_from_matrix([X,Y], Matrix, Item):-
     nth0(X, Matrix, Row),
     nth0(Y, Row, Item).
 
 
 % елементи нижче по вертикалі
+%
+% below(++[X,Y], ++Matrix, -ResList)
 below([X,Y], Matrix, ResList) :-
     below_help([X,Y], Matrix, [], ResList).
 
@@ -299,6 +346,8 @@ below_help([X,Y], Matrix, MiddleRes, Res):-
 
 
 % елементи нижче по вертикалі і лівіше по горизонталі
+%
+% below_left(++[X,Y], ++Matrix, -ResList)
 below_left([X,Y], Matrix, ResList) :-
     below_left_help([X,Y], Matrix, [], ResList).
 
@@ -326,6 +375,8 @@ below_left_help([X,Y], Matrix, MiddleRes, Res):-
     below_left_help([X1,Y1], Matrix, Res2, Res).
 
 % елементи нижче по вертикалі і правіше по горизонталі
+%
+% below_right(++[X,Y], ++Matrix, -ResList)
 below_right([X,Y], Matrix, ResList) :-
     below_right_help([X,Y], Matrix, [], ResList).
 
@@ -360,7 +411,9 @@ below_right_help([X,Y], Matrix, MiddleRes, Res):-
 
 
 
-% елементи вище по вертикалі 
+% елементи вище по вертикалі
+%
+% above(++[X,Y], ++Matrix, -ResList)
 above([X,Y], Matrix, ResList) :-
     above_help([X,Y], Matrix, [], ResList).
 
@@ -371,7 +424,7 @@ above_help([X,_], _, MiddleRes, Res):-
 
 above_help([X,Y], Matrix, MiddleRes, Res):-
     X1 is X-1,
-    get_element_from_matrix([X1,Y], Matrix, Item),    
+    get_element_from_matrix([X1,Y], Matrix, Item),
     (Item==0;
     Item==2),
     Res = MiddleRes,!.
@@ -383,6 +436,8 @@ above_help([X,Y], Matrix, MiddleRes, Res):-
 
 
 % елементи вище по вертикалі і лівіше по горизонталі
+%
+% above_left(++[X,Y], ++Matrix, -ResList)
 above_left([X,Y], Matrix, ResList) :-
     above_left_help([X,Y], Matrix, [], ResList).
 
@@ -407,6 +462,8 @@ above_left_help([X,Y], Matrix, MiddleRes, Res):-
     above_left_help([X1,Y1], Matrix, Res2, Res).
 
 % елементи вище по вертикалі і правіше по горизонталі
+%
+% above_right(++[X,Y], ++Matrix, -ResList)
 above_right([X,Y], Matrix, ResList) :-
     above_right_help([X,Y], Matrix, [], ResList).
 
@@ -436,6 +493,8 @@ above_right_help([X,Y], Matrix, MiddleRes, Res):-
 
 
 % елементи лівіше по горизонталі
+%
+% left(++[X,Y], ++Matrix, -ResList)
 left([X,Y], Matrix, ResList) :-
     left_help([X,Y], Matrix, [], ResList).
 
@@ -459,7 +518,8 @@ left_help([X,Y], Matrix, MiddleRes, Res):-
 
 
 % елементи правіше по горизонталі
-
+%
+% right(++[X,Y], ++Matrix, -ResList)
 right([X,Y], Matrix, ResList) :-
     right_help([X,Y], Matrix, [], ResList).
 
