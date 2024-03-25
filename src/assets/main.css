@@ -1,0 +1,25 @@
+@import './base.css';
+
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+  font-weight: normal;
+  background-color: #f8f8f8;
+}
+html,body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  place-items: center;
+  font-family: "Comfortaa", sans-serif;
+  font-weight: 700;
+  color: #181818;
+}
+
+
+.font{
+  font-family: "Comfortaa", sans-serif;
+  font-weight: 700;
+}
